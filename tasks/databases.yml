@@ -1,0 +1,90 @@
+---
+# - name: Remove the test database
+#   command: mysql -NB -s -S {{ mariadb_socket }} -u root -p{{ mariadb_new_root_password }} -e "{{ item }}"
+#   with_items:
+#     - CREATE
+#   mysql_db:
+#     name: test
+#     login_user: root
+#     login_password: 
+#     login_unix_socket: "{{ mariadb_socket }}"
+#     state: absent
+#   check_mode: no
+#   tags: mariadb
+
+- name: Create user definition databases
+  command: mysql -NB -s -S {{ mariadb_socket }} -u root -e "{{ item }}"
+  with_items:
+    - CREATE DATABASE IF NOT EXISTS {{ database.name }}
+  when:
+    - mariadb_auth_unix_socket_plugin
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-databases
+    - mariadb
+    - mariadb-create-databases
+
+- name: Create user definition databases by not using unix_socket
+  command: mysql -NB -s -S {{ mariadb_socket }} -u root -p{{ mariadb_new_root_password }} -e "{{ item }}"
+  with_items:
+    - CREATE DATABASE IF NOT EXISTS {{ database.name }}
+  when:
+    - not mariadb_auth_unix_socket_plugin
+    - mariadb_new_root_password | length > 0
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-databases
+    - mariadb
+    - mariadb-create-databases
+
+- name: Create user definition databases by not using unix_socket
+  command: mysql -NB -s -S {{ mariadb_socket }} -u root -p{{ mariadb_current_root_password }} -e "{{ item }}"
+  with_items:
+    - CREATE DATABASE IF NOT EXISTS {{ database.name }}
+  when:
+    - not mariadb_auth_unix_socket_plugin
+    - mariadb_current_root_password | length > 0
+    - mariadb_new_root_password | length == 0
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-databases
+    - mariadb
+    - mariadb-create-databases
+
+# Below, the databases are initialised, but only when the database was created
+# in the previous step. This ensures idempotence.
+# The tasks trigger an ansible-lint warning:
+#   [503] Tasks that run when changed should likely be handlers
+# That's not the case here, so the linter warning is ignored.
+
+# - name: Copy database init scripts
+#   template:  # noqa 503
+#     src: "{{ item.item.init_script }}"
+#     dest: "/tmp/{{ item.item.init_script | basename }}"
+#     mode: '0600'
+#   with_items: "{{ db_creation.results }}"
+#   when: item.changed and item.item.init_script is defined
+#   tags: mariadb
+
+# - name: Initialise databases
+#   mysql_db:  # noqa 503
+#     name: "{{ item.item.name }}"
+#     state: import
+#     target: "/tmp/{{ item.item.init_script | basename }}"
+#     login_user: root
+#     login_password: "{{ mariadb_root_password }}"
+#     login_unix_socket: "{{ mariadb_socket }}"
+#   with_items: "{{ db_creation.results }}"
+#   when: item.changed and item.item.init_script is defined
+#   tags: mariadb
+
+# - name: Delete init scripts from the server
+#   file:  # noqa 503
+#     name: "/tmp/{{ item.item.init_script | basename }}"
+#     state: absent
+#   with_items: "{{ db_creation.results }}"
+#   when: item.changed and item.item.init_script is defined
+#   tags: mariadb

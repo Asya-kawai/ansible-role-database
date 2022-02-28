@@ -1,0 +1,52 @@
+---
+mariadb_debian_install:
+  - mariadb-common
+  - mariadb-server
+  - python3-pymysql
+
+mariadb_redhat_install:
+  - mariadb-common
+  - mariadb_server
+  - python3-PyMySQL
+
+# The latest version at 2022/02/25.
+mariadb_databases: []
+mariadb_users: []
+mariadb_current_root_password: ''
+# This variable uses only when updating password.
+mariadb_new_root_password: ''
+mariadb_auth_unix_socket_plugin: true
+
+mariadb_configure_swappiness: true
+mariadb_swappiness: "0"
+
+mariadb_system_user:
+  name: 'mysql'
+  shell: '/sbin/nologin'
+  home: '/var/lib/mysql'
+  comment: 'MySQL Server'
+
+mariadb_logrotate:
+  configure: true
+
+# Network configuration (network.cnf)
+mariadb_service: mariadb
+mariadb_bind_address: '127.0.0.1'
+
+# Server configuration
+mariadb_character_set_server: utf8mb4
+mariadb_collation_server: utf8mb4_unicode_ci
+mariadb_skip_character_set_client_handshake: true
+mariadb_innodb_file_format: Barracuda
+mariadb_innodb_file_per_table: 'ON'
+mariadb_innodb_large_prefix: 'ON'
+mariadb_max_allowed_packet: 1GB
+mariadb_connect_timeout: 10
+mariadb_net_read_timeout: 30
+mariadb_net_write_timeout: 60
+mariadb_table_definition_cache: 400
+
+mariadb_server_cnf: {}
+
+# Custom configuration
+mariadb_custom_cnf: {}

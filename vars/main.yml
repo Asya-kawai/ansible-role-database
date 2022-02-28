@@ -1,0 +1,7 @@
+---
+mariadb_socket: >-
+  {% if ansible_facts['os_family'] == 'Debian' %}
+  /var/run/mysqld/mysqld.sock
+  {% else %}
+  /var/lib/mysql/mysql.sock
+  {% endif %}

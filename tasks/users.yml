@@ -1,0 +1,46 @@
+---
+- name: Create the users with current password by using unix_socket
+  command: mysql -NB -s -S {{ mariadb_socket }} -u root -e "{{ item }}"
+  with_items:
+    - CREATE USER IF NOT EXISTS {{ user.name }}@{{ user.host }} IDENTIFIED BY '{{ user.password }}'
+    - GRANT {{ user.priv_type }} ON {{ user.priv_level }} TO {{ user.name }}@{{ user.host }}
+  when:
+    - mariadb_auth_unix_socket_plugin
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-users
+    - mariadb
+    - mariadb-create-users
+
+- name: Create the users with new password by not using unix_socket
+  command: mysql -NB -s -S {{ mariadb_socket }} -u root -p{{ mariadb_new_root_password }} -e "{{ item }}"
+  with_items:
+    - CREATE USER IF NOT EXISTS {{ user.name }}@{{ user.host }} IDENTIFIED BY '{{ user.password }}'
+    - GRANT {{ user.priv_type }} ON {{ user.priv_level }} TO {{ user.name }}@{{ user.host }}
+  when:
+    - not mariadb_auth_unix_socket_plugin
+    - mariadb_new_root_password | length > 0
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-users
+    - mariadb
+    - mariadb-create-users
+
+- name: Create the users with current password by not using unix_socket
+  command: mysql -NB -s -S {{ mariadb_socket }} -u root -p{{ mariadb_current_root_password }} -e "{{ item }}"
+  with_items:
+    - CREATE USER IF NOT EXISTS {{ user.name }}@{{ user.host }} IDENTIFIED BY '{{ user.password }}'
+    - GRANT {{ user.priv_type }} ON {{ user.priv_level }} TO {{ user.name }}@{{ user.host }}
+  when:
+    - not mariadb_auth_unix_socket_plugin
+    - mariadb_current_root_password | length > 0
+    - mariadb_new_root_password | length == 0
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-users
+    - mariadb
+    - mariadb-create-users
+

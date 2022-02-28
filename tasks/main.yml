@@ -1,0 +1,153 @@
+---
+# Reference: https://github.com/bertvv/ansible-role-mariadb
+# Reference: https://github.com/geerlingguy/ansible-role-mysql
+- name: Update OS package caches for Debian
+  apt:
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+  tags:
+    - configuration
+    - package-update
+    - database
+    - database-update-packages
+    - mariadb
+    - mariadb-update-packages
+
+- name: Update OS package caches for CentOS
+  dnf:
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'RedHat'
+  tags:
+    - configuration
+    - package-update
+    - database
+    - database-update-packages
+    - mariadb
+    - mariadb-update-packages
+
+# For Ubuntu
+- name: Install MariaDB for Ubuntu
+  apt:
+    name: "{{ mariadb_debian_install }}"
+    state: latest
+  when: ansible_facts['os_family'] == 'Debian'
+  tags:
+    - configuration
+    - package-update
+    - database
+    - database-install-packages
+    - mariadb
+    - mariadb-install-packages
+
+# For CentOS
+- name: Install MariaDB for CentOS
+  yum:
+    name: "{{ mariadb_redhat_install }}"
+    state: latest
+  when: ansible_facts['os_family'] == 'RedHat'
+  tags:
+    - configuration
+    - package-update
+    - database
+    - database-install-packages
+    - mariadb
+    - mariadb-install-packages
+
+- name: Configure MariaDB
+  include_tasks: config.yml
+  tags:
+    - database
+    - database-configure-mariadb
+    - mariadb
+    - mariadb-configure
+
+- name: Get MariaDB version
+  shell: mysql --version | awk '{print $5}' | sed 's/-MariaDB//' | tr -d ','
+  register: mariadb_version
+  changed_when: false
+  tags:
+    - database
+    - database-get-mariadb-version
+    - mariadb
+    - mariadb-get-version
+
+- name: Authentication changes in version 10.4 message
+  debug:
+    msg: >
+      Authentication has changed in version 10.4. Both the root user and
+      the user that owns the data directory (mysql by default) now utilize
+      the unix_socket plugin for passwordless access, and are created with
+      an invalid password. Therefore setting a password isn't required for
+      those user accounts accessing via the unix socket. Please see
+      https://mariadb.org/authentication-in-mariadb-10-4/ .
+      Skipping authentication setup tasks!
+  check_mode: false
+  when:
+    - mariadb_version is defined
+    - mariadb_version.stdout != ''
+    - mariadb_version.stdout is version('10.4', '>=')
+  tags:
+    - database
+    - mariadb
+
+# This command will exit non-zero when the authentication plugin is NOT unix_socket.
+- name: Check whether uses unix_socket or not
+  command: mysql -S {{ mariadb_socket }} -u root -e 'quit'
+  register: unix_socket_check_result
+  changed_when: false
+  ignore_errors: true
+  tags:
+    - database
+    - database-check-unix-socket
+    - mariadb
+    - mariadb-check-unix-socket
+
+- name: Set the database root password
+  include_tasks: root_password.yml
+  when:
+    - mariadb_version is defined
+    - mariadb_version.stdout != ''
+    - mariadb_version.stdout is version('10.4', '<')
+    - not mariadb_auth_unix_socket_plugin # This means that does not use unix_socket.
+  tags:
+    - database
+    - database-set-root-password
+    - mariadb
+    - mariadb-set-root-password
+
+- name: Enable plugin unix_socket
+  include_tasks: auth_unix_plugin.yml
+  when:
+    - mariadb_version is defined
+    - mariadb_version.stdout != ''
+    - mariadb_version.stdout is version('10.4', '<')
+    - unix_socket_check_result.rc != 0
+    - mariadb_auth_unix_socket_plugin
+  tags:
+    - database
+    - database-enable-plugin-unix-socket
+    - mariadb
+    - mariadb-enable-plugin-unix-socket
+
+- name: Create users
+  include_tasks: users.yml
+  with_items: "{{ mariadb_users }}"
+  loop_control:
+    loop_var: user
+  no_log: "{{ not ansible_check_mode }}"
+  tags:
+    - database
+    - database-create-users
+    - mariadb
+    - mariadb-create-users
+
+- name: Create and initialize databases
+  include_tasks: databases.yml
+  with_items: "{{ mariadb_databases }}"
+  loop_control:
+    loop_var: database
+  tags:
+    - database
+    - database-create-databases
+    - mariadb
+    - mariadb-create-databases

@@ -1,0 +1,66 @@
+---
+- name: Install server config file for Ubuntu
+  template:
+    src: "{{ ansible_facts['os_family'] }}/etc/mysql/mariadb.conf.d/50-server.cnf.j2"
+    dest: "/etc/mysql/mariadb.conf.d/50-server.cnf"
+  when: ansible_facts['os_family'] == 'Debian'
+  notify: Restart mariadb
+  tags: mariadb
+
+- name: Install server config file for CentOS
+  template:
+    src: "{{ ansible_facts['os_family'] }}/etc/my.cnf.d/mariadb-server.cnf.j2"
+    dest: "/etc/my.cnf.d/mariadb-server.cnf"
+  when: ansible_facts['os_family'] == 'RedHat'
+  notify: Restart mariadb
+  tags: mariadb
+
+- name: Create log directory for Ubuntu
+  file:
+    state: directory
+    path: /var/log/mysql
+    owner: mysql
+    group: mysql
+    mode: 0755
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - mariadb_logrotate.configure | bool
+
+# SELinux context mysqld_log_t is default for /var/log/mariadb
+- name: Create log directory for CentOS
+  file:
+    state: directory
+    path: /var/log/mariadb
+    owner: mysql
+    group: mysql
+    mode: 0755
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - mariadb_logrotate.configure | bool
+
+- name: Configure logrotate for Ubuntu
+  template:
+    src: "{{ ansible_facts['os_family'] }}/etc/logrotate.d/mysql-server.j2"
+    dest: /etc/logrotate.d/mysql-server
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - mariadb_logrotate.configure | bool
+  notify: Restart mariadb
+  tags: mariadb
+
+- name: Configure logrotate for CentOS
+  template:
+    src: "{{ ansible_facts['os_family'] }}/etc/logrotate.d/mariadb.j2"
+    dest: /etc/logrotate.d/mariadb
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - mariadb_logrotate.configure | bool
+  notify: Restart mariadb
+  tags: mariadb
+
+- name: Ensure service is started
+  service:
+    name: mariadb
+    state: started
+    enabled: true
+  tags: mariadb

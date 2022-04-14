@@ -5,7 +5,13 @@
     dest: "/etc/mysql/mariadb.conf.d/50-server.cnf"
   when: ansible_facts['os_family'] == 'Debian'
   notify: Restart mariadb
-  tags: mariadb
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-install-server-config
+    - mariadb-install-server-config
 
 - name: Install server config file for CentOS
   template:
@@ -13,18 +19,31 @@
     dest: "/etc/my.cnf.d/mariadb-server.cnf"
   when: ansible_facts['os_family'] == 'RedHat'
   notify: Restart mariadb
-  tags: mariadb
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-install-server-config
+    - mariadb-install-server-config
 
 - name: Create log directory for Ubuntu
   file:
     state: directory
     path: /var/log/mysql
     owner: mysql
-    group: mysql
-    mode: 0755
+    group: adm
+    mode: 02750
   when:
     - ansible_facts['os_family'] == 'Debian'
     - mariadb_logrotate.configure | bool
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-create-log-directory
+    - mariadb-create-log-directory
 
 # SELinux context mysqld_log_t is default for /var/log/mariadb
 - name: Create log directory for CentOS
@@ -37,6 +56,13 @@
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - mariadb_logrotate.configure | bool
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-create-log-directory
+    - mariadb-create-log-directory
 
 - name: Configure logrotate for Ubuntu
   template:
@@ -46,7 +72,13 @@
     - ansible_facts['os_family'] == 'Debian'
     - mariadb_logrotate.configure | bool
   notify: Restart mariadb
-  tags: mariadb
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-configure-logrotate
+    - mariadb-configure-logrotate
 
 - name: Configure logrotate for CentOS
   template:
@@ -56,11 +88,23 @@
     - ansible_facts['os_family'] == 'RedHat'
     - mariadb_logrotate.configure | bool
   notify: Restart mariadb
-  tags: mariadb
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-configure-logrotate
+    - mariadb-configure-logrotate
 
 - name: Ensure service is started
   service:
     name: mariadb
     state: started
     enabled: true
-  tags: mariadb
+  tags:
+    - database
+    - mariadb
+    - database-configure-mariadb
+    - mariadb-configure
+    - database-enable-service
+    - mariadb-enable-service

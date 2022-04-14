@@ -20,11 +20,12 @@ mariadb_auth_unix_socket_plugin: true
 mariadb_configure_swappiness: true
 mariadb_swappiness: "0"
 
-mariadb_system_user:
-  name: 'mysql'
-  shell: '/sbin/nologin'
-  home: '/var/lib/mysql'
-  comment: 'MySQL Server'
+# Don't need to use this parameter.
+# mariadb_system_user:
+#   name: 'mysql'
+#   shell: '/sbin/nologin'
+#   home: '/var/lib/mysql'
+#   comment: 'MySQL Server'
 
 mariadb_logrotate:
   configure: true

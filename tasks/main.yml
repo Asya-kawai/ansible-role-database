@@ -62,7 +62,7 @@
     - mariadb-configure
 
 - name: Get MariaDB version
-  shell: mysql --version | awk '{print $5}' | sed 's/-MariaDB//' | tr -d ','
+  shell: set -o pipefail && mysql --version | awk '{print $5}' | sed 's/-MariaDB//' | tr -d ','
   register: mariadb_version
   changed_when: false
   tags:
@@ -84,7 +84,7 @@
   check_mode: false
   when:
     - mariadb_version is defined
-    - mariadb_version.stdout != ''
+    - mariadb_version.stdout
     - mariadb_version.stdout is version('10.4', '>=')
   tags:
     - database
@@ -108,7 +108,8 @@
     - mariadb_version is defined
     - mariadb_version.stdout != ''
     - mariadb_version.stdout is version('10.4', '<')
-    - not mariadb_auth_unix_socket_plugin # This means that does not use unix_socket.
+    # This means that does not use unix_socket.
+    - not mariadb_auth_unix_socket_plugin
   tags:
     - database
     - database-set-root-password

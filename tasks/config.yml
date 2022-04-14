@@ -3,6 +3,9 @@
   template:
     src: "{{ ansible_facts['os_family'] }}/etc/mysql/mariadb.conf.d/50-server.cnf.j2"
     dest: "/etc/mysql/mariadb.conf.d/50-server.cnf"
+    owner: root
+    group: root
+    mode: 0644
   when: ansible_facts['os_family'] == 'Debian'
   notify: Restart mariadb
   tags:
@@ -17,6 +20,9 @@
   template:
     src: "{{ ansible_facts['os_family'] }}/etc/my.cnf.d/mariadb-server.cnf.j2"
     dest: "/etc/my.cnf.d/mariadb-server.cnf"
+    owner: root
+    group: root
+    mode: 0644
   when: ansible_facts['os_family'] == 'RedHat'
   notify: Restart mariadb
   tags:
@@ -68,6 +74,9 @@
   template:
     src: "{{ ansible_facts['os_family'] }}/etc/logrotate.d/mysql-server.j2"
     dest: /etc/logrotate.d/mysql-server
+    owner: root
+    group: root
+    mode: 0644
   when:
     - ansible_facts['os_family'] == 'Debian'
     - mariadb_logrotate.configure | bool
@@ -84,6 +93,9 @@
   template:
     src: "{{ ansible_facts['os_family'] }}/etc/logrotate.d/mariadb.j2"
     dest: /etc/logrotate.d/mariadb
+    owner: root
+    group: root
+    mode: 0644
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - mariadb_logrotate.configure | bool

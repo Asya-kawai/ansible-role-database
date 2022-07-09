@@ -62,7 +62,7 @@
     - mariadb-configure
 
 - name: Get MariaDB version
-  shell: set -o pipefail && mysql --version | awk '{print $5}' | sed 's/-MariaDB//' | tr -d ','
+  shell: mysql --version | awk '{print $5}' | sed 's/-MariaDB//' | tr -d ','
   register: mariadb_version
   changed_when: false
   tags:

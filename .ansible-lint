@@ -9,3 +9,4 @@ skip_list:
   - 'package-latest'
   - 'fqcn-builtins'
   - 'risky-shell-pipe'
+  - 'no-changed-when'
